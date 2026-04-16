@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YT's Snake Game</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow-x: hidden;
+      background: radial-gradient(circle, #1a1a1a, #000);
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    canvas {
+      background: #0a0a0a;
+      border: 3px solid #888;
+      border-radius: 10px;
+      box-shadow: 0 0 25px rgba(0,255,0,0.35);
+      display: block;
+      max-width: 92vw;
+      height: auto;
+    }
+
+    #hud {
+      margin: 6px;
+      font-size: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .controls {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 75px 75px 75px;
+      grid-template-rows: 75px 75px 75px;
+      gap: 10px;
+    }
+
+    .btn {
+      background: linear-gradient(145deg, #444, #222);
+      border-radius: 14px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 32px;
+      user-select: none;
+      color: #fff;
+    }
+
+    .btn:active { background: #777; }
+    .empty { visibility: hidden; }
+
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.8);
+      flex-direction: column;
+      color: white;
+    }
+
+    #overlay button {
+      margin-top: 10px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h2>YT's Snake Game</h2>
+
+<div id="hud">
+  <div>Score: <span id="score">0</span></div>
+  <div>Item expires in: <span id="timer">15</span>s</div>
+</div>
+
+<div style="position:relative">
+  <canvas id="game" width="480" height="480"></canvas>
+
+  <div id="overlay">
+    <h1>You Lose</h1>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="empty"></div>
+  <div class="btn" data-dir="up">⬆️</div>
+  <div class="empty"></div>
+
+  <div class="btn" data-dir="left">⬅️</div>
+  <div class="empty"></div>
+  <div class="btn" data-dir="right">➡️</div>
+
+  <div class="empty"></div>
+  <div class="btn" data-dir="down">⬇️</div>
+  <div class="empty"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+const grid = 16;
+const tileCount = canvas.width / grid;
+
+let count = 0;
+let running = true;
+let score = 0;
+
+function updateScore(){
+  document.getElementById('score').textContent = score;
+}
+
+let snake, item, itemTimer, lastSpawn;
+
+function init(){
+  snake = {
+    x: grid * Math.floor(tileCount / 2),
+    y: grid * Math.floor(tileCount / 2),
+    dx: grid,
+    dy: 0,
+    cells: [],
+    maxCells: 6
+  };
+
+  score = 0;
+  updateScore();
+
+  spawnItem();
+  running = true;
+  document.getElementById('overlay').style.display = 'none';
+}
+
+function spawnItem(){
+  const r = Math.random();
+  let type = 'apple';
+  if(r < 0.6) type = 'apple';
+  else if(r < 0.95) type = 'strawberry';
+  else type = 'poison';
+
+  item = {
+    type,
+    x: Math.floor(Math.random() * tileCount) * grid,
+    y: Math.floor(Math.random() * tileCount) * grid
+  };
+
+  itemTimer = 15;
+  lastSpawn = Date.now();
+}
+
+function gameOver(){
+  running = false;
+  document.getElementById('overlay').style.display = 'flex';
+}
+
+function drawItem(){
+  if(item.type==='apple'){
+    ctx.fillStyle='red';
+    ctx.beginPath();
+    ctx.arc(item.x+grid/2,item.y+grid/2,grid/2-2,0,Math.PI*2);
+    ctx.fill();
+  } else if(item.type==='poison'){
+    ctx.fillStyle='black';
+    ctx.beginPath();
+    ctx.arc(item.x+grid/2,item.y+grid/2,grid/2-2,0,Math.PI*2);
+    ctx.fill();
+  } else {
+    ctx.font = `${grid}px serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('🍓', item.x+grid/2,item.y+grid/2);
+  }
+}
+
+function drawSnake(){
+  snake.cells.forEach((cell,i)=>{
+    ctx.fillStyle = `rgb(0,${255-i*5},0)`;
+    ctx.beginPath();
+    ctx.roundRect(cell.x,cell.y,grid-2,grid-2,6);
+    ctx.fill();
+  });
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  if(!running) return;
+
+  const tick = 6;
+  if(++count < tick) return;
+  count=0;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+
+  if(snake.x < 0) snake.x = canvas.width - grid;
+  else if(snake.x >= canvas.width) snake.x = 0;
+
+  if(snake.y < 0) snake.y = canvas.height - grid;
+  else if(snake.y >= canvas.height) snake.y = 0;
+
+  snake.cells.unshift({x:snake.x,y:snake.y});
+  if(snake.cells.length > snake.maxCells) snake.cells.pop();
+
+  drawItem();
+  drawSnake();
+
+  const head = snake.cells[0];
+
+  if(head.x===item.x && head.y===item.y){
+    score++;
+    updateScore();
+
+    if(item.type==='apple') snake.maxCells++;
+    else if(item.type==='strawberry'){
+      snake.maxCells = Math.max(2,snake.maxCells-1);
+      while(snake.cells.length>snake.maxCells) snake.cells.pop();
+    }
+    else if(item.type==='poison'){
+      gameOver();
+      return;
+    }
+
+    spawnItem();
+  }
+}
+
+function restartGame(){ init(); }
+
+document.querySelectorAll('.btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const dir = btn.dataset.dir;
+    if(dir==='left' && snake.dx===0){snake.dx=-grid;snake.dy=0;}
+    else if(dir==='right' && snake.dx===0){snake.dx=grid;snake.dy=0;}
+    else if(dir==='up' && snake.dy===0){snake.dy=-grid;snake.dx=0;}
+    else if(dir==='down' && snake.dy===0){snake.dy=grid;snake.dx=0;}
+  });
+});
+
+init();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
