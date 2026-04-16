@@ -13,6 +13,7 @@
       background: radial-gradient(circle, #1a1a1a, #000);
       color: #fff;
       font-family: Arial, sans-serif;
+      overflow: hidden;
     }
 
     canvas {
@@ -32,35 +33,21 @@
       justify-content: center;
     }
 
-    .panel {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    select {
-      background: #222;
-      color: #fff;
-      border: 1px solid #555;
-      border-radius: 6px;
-      padding: 4px;
-    }
-
     .controls {
-      margin-top: 12px;
+      margin-top: 10px;
       display: grid;
-      grid-template-columns: 60px 60px 60px;
-      grid-template-rows: 60px 60px 60px;
+      grid-template-columns: 75px 75px 75px;
+      grid-template-rows: 75px 75px 75px;
       gap: 10px;
     }
 
     .btn {
       background: linear-gradient(145deg, #444, #222);
-      border-radius: 12px;
+      border-radius: 14px;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 26px;
+      font-size: 32px;
       user-select: none;
       color: #fff;
     }
@@ -96,19 +83,10 @@
 <div id="hud">
   <div>Score: <span id="score">0</span></div>
   <div>Item expires in: <span id="timer">15</span>s</div>
-
-  <div class="panel">
-    Speed:
-    <select id="speed">
-      <option value="slow">Slow</option>
-      <option value="normal" selected>Normal</option>
-      <option value="fast">Fast</option>
-    </select>
-  </div>
 </div>
 
 <div style="position:relative">
-  <canvas id="game" width="672" height="672"></canvas>
+  <canvas id="game" width="480" height="480"></canvas>
 
   <div id="overlay">
     <h1>You Lose</h1>
@@ -134,20 +112,20 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-const grid = 32;
+const grid = 16;
 const tileCount = canvas.width / grid;
 
 let count = 0;
 let running = true;
 let score = 0;
 
-function updateScore() {
+function updateScore(){
   document.getElementById('score').textContent = score;
 }
 
 let snake, item, itemTimer, lastSpawn;
 
-function init() {
+function init(){
   snake = {
     x: grid * Math.floor(tileCount / 2),
     y: grid * Math.floor(tileCount / 2),
@@ -165,18 +143,11 @@ function init() {
   document.getElementById('overlay').style.display = 'none';
 }
 
-function speedFactor() {
-  const v = document.getElementById('speed').value;
-  if (v === 'fast') return 1.5;
-  if (v === 'slow') return 0.5;
-  return 1;
-}
-
-function spawnItem() {
+function spawnItem(){
   const r = Math.random();
   let type = 'apple';
-  if (r < 0.6) type = 'apple';
-  else if (r < 0.95) type = 'strawberry';
+  if(r < 0.6) type = 'apple';
+  else if(r < 0.95) type = 'strawberry';
   else type = 'poison';
 
   item = {
@@ -189,137 +160,78 @@ function spawnItem() {
   lastSpawn = Date.now();
 }
 
-function gameOver() {
+function gameOver(){
   running = false;
   document.getElementById('overlay').style.display = 'flex';
 }
 
-function reset() {
-  init();
-}
-
-function drawApple(x, y) {
-  ctx.fillStyle = 'red';
-  ctx.beginPath();
-  ctx.arc(x + grid/2, y + grid/2, grid/2 - 3, 0, Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle = 'green';
-  ctx.beginPath();
-  ctx.ellipse(x + grid/2 + 5, y + 6, 5, 3, Math.PI/4, 0, Math.PI*2);
-  ctx.fill();
-}
-
-function drawPoison(x, y) {
-  ctx.fillStyle = 'black';
-  ctx.beginPath();
-  ctx.arc(x + grid/2, y + grid/2, grid/2 - 3, 0, Math.PI*2);
-  ctx.fill();
-
-  ctx.strokeStyle = 'purple';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(x+6, y+6);
-  ctx.lineTo(x+grid-6, y+grid-6);
-  ctx.moveTo(x+grid-6, y+6);
-  ctx.lineTo(x+6, y+grid-6);
-  ctx.stroke();
-}
-
-function drawStrawberry(x, y) {
-  ctx.font = `${grid}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('🍓', x + grid/2, y + grid/2);
-}
-
-function drawItem() {
-  if (item.type === 'apple') drawApple(item.x, item.y);
-  else if (item.type === 'poison') drawPoison(item.x, item.y);
-  else drawStrawberry(item.x, item.y);
-}
-
-function drawSnake() {
-  snake.cells.forEach((cell, index) => {
-    const shade = 255 - index * 5;
-    ctx.fillStyle = `rgb(0, ${shade}, 0)`;
+function drawItem(){
+  if(item.type==='apple'){
+    ctx.fillStyle='red';
     ctx.beginPath();
-    ctx.roundRect(cell.x, cell.y, grid-2, grid-2, 8);
+    ctx.arc(item.x+grid/2,item.y+grid/2,grid/2-2,0,Math.PI*2);
     ctx.fill();
+  }
+  else if(item.type==='poison'){
+    ctx.fillStyle='black';
+    ctx.beginPath();
+    ctx.arc(item.x+grid/2,item.y+grid/2,grid/2-2,0,Math.PI*2);
+    ctx.fill();
+  }
+  else{
+    ctx.font = `${grid}px serif`;
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('🍓', item.x+grid/2,item.y+grid/2);
+  }
+}
 
-    if (index === 0) {
-      ctx.fillStyle = 'white';
-      ctx.beginPath();
-      ctx.arc(cell.x + 10, cell.y + 12, 4, 0, Math.PI*2);
-      ctx.arc(cell.x + 22, cell.y + 12, 4, 0, Math.PI*2);
-      ctx.fill();
-
-      ctx.fillStyle = 'black';
-      ctx.beginPath();
-      ctx.arc(cell.x + 10, cell.y + 12, 2, 0, Math.PI*2);
-      ctx.arc(cell.x + 22, cell.y + 12, 2, 0, Math.PI*2);
-      ctx.fill();
-
-      ctx.strokeStyle = 'red';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(cell.x + grid/2, cell.y + grid/2);
-      ctx.lineTo(cell.x + grid/2, cell.y + grid/2 + 10);
-      ctx.lineTo(cell.x + grid/2 - 4, cell.y + grid/2 + 14);
-      ctx.moveTo(cell.x + grid/2, cell.y + grid/2 + 10);
-      ctx.lineTo(cell.x + grid/2 + 4, cell.y + grid/2 + 14);
-      ctx.stroke();
-    }
+function drawSnake(){
+  snake.cells.forEach((cell,i)=>{
+    ctx.fillStyle = `rgb(0,${255-i*5},0)`;
+    ctx.beginPath();
+    ctx.roundRect(cell.x,cell.y,grid-2,grid-2,6);
+    ctx.fill();
   });
 }
 
-function loop() {
+function loop(){
   requestAnimationFrame(loop);
-  if (!running) return;
+  if(!running) return;
 
-  const speed = speedFactor();
-  const tick = Math.max(2, Math.round(6 / speed));
+  const tick = 6;
+  if(++count < tick) return;
+  count=0;
 
-  if (++count < tick) return;
-  count = 0;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   snake.x += snake.dx;
   snake.y += snake.dy;
 
-  if (snake.x < 0) snake.x = canvas.width - grid;
-  else if (snake.x >= canvas.width) snake.x = 0;
+  if(snake.x < 0) snake.x = canvas.width - grid;
+  else if(snake.x >= canvas.width) snake.x = 0;
 
-  if (snake.y < 0) snake.y = canvas.height - grid;
-  else if (snake.y >= canvas.height) snake.y = 0;
+  if(snake.y < 0) snake.y = canvas.height - grid;
+  else if(snake.y >= canvas.height) snake.y = 0;
 
-  snake.cells.unshift({ x: snake.x, y: snake.y });
-  if (snake.cells.length > snake.maxCells) snake.cells.pop();
+  snake.cells.unshift({x:snake.x,y:snake.y});
+  if(snake.cells.length > snake.maxCells) snake.cells.pop();
 
   drawItem();
   drawSnake();
 
-  const elapsed = (Date.now() - lastSpawn) / 1000;
-  itemTimer = Math.max(0, 15 - Math.floor(elapsed));
-  document.getElementById('timer').textContent = itemTimer;
-
-  if (itemTimer <= 0) spawnItem();
-
   const head = snake.cells[0];
 
-  if (head.x === item.x && head.y === item.y) {
+  if(head.x===item.x && head.y===item.y){
     score++;
     updateScore();
 
-    if (item.type === 'apple') {
-      snake.maxCells++;
+    if(item.type==='apple') snake.maxCells++;
+    else if(item.type==='strawberry'){
+      snake.maxCells = Math.max(2,snake.maxCells-1);
+      while(snake.cells.length>snake.maxCells) snake.cells.pop();
     }
-    else if (item.type === 'strawberry') {
-      snake.maxCells = Math.max(2, snake.maxCells - 1);
-      while (snake.cells.length > snake.maxCells) snake.cells.pop();
-    }
-    else if (item.type === 'poison') {
+    else if(item.type==='poison'){
       gameOver();
       return;
     }
@@ -328,31 +240,27 @@ function loop() {
   }
 }
 
-function restartGame() {
-  init();
-}
+function restartGame(){ init(); }
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft' && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; }
-  else if (e.key === 'ArrowUp' && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; }
-  else if (e.key === 'ArrowRight' && snake.dx === 0) { snake.dx = grid; snake.dy = 0; }
-  else if (e.key === 'ArrowDown' && snake.dy === 0) { snake.dy = grid; snake.dx = 0; }
+// ✅ FIX: touch arrow controls restored
+document.querySelectorAll('.btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const dir = btn.dataset.dir;
+    if(dir==='left' && snake.dx===0){snake.dx=-grid;snake.dy=0;}
+    else if(dir==='right' && snake.dx===0){snake.dx=grid;snake.dy=0;}
+    else if(dir==='up' && snake.dy===0){snake.dy=-grid;snake.dx=0;}
+    else if(dir==='down' && snake.dy===0){snake.dy=grid;snake.dx=0;}
+  });
 });
 
-function bindControls() {
-  document.querySelectorAll('.btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const dir = btn.dataset.dir;
-      if (dir === 'left' && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; }
-      else if (dir === 'up' && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; }
-      else if (dir === 'right' && snake.dx === 0) { snake.dx = grid; snake.dy = 0; }
-      else if (dir === 'down' && snake.dy === 0) { snake.dy = grid; snake.dx = 0; }
-    });
-  });
-}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft' && snake.dx===0){snake.dx=-grid;snake.dy=0;}
+  else if(e.key==='ArrowRight' && snake.dx===0){snake.dx=grid;snake.dy=0;}
+  else if(e.key==='ArrowUp' && snake.dy===0){snake.dy=-grid;snake.dx=0;}
+  else if(e.key==='ArrowDown' && snake.dy===0){snake.dy=grid;snake.dx=0;}
+});
 
 init();
-bindControls();
 requestAnimationFrame(loop);
 </script>
 </body>
