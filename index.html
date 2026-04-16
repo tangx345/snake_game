@@ -39,6 +39,14 @@
       justify-content: center;
     }
 
+    select {
+      background: #222;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 4px;
+    }
+
     .controls {
       margin-top: 10px;
       display: grid;
@@ -89,6 +97,16 @@
 <div id="hud">
   <div>Score: <span id="score">0</span></div>
   <div>Item expires in: <span id="timer">15</span>s</div>
+
+  <!-- SPEED CONTROL RESTORED -->
+  <div>
+    Speed:
+    <select id="speed">
+      <option value="slow">Slow</option>
+      <option value="normal" selected>Normal</option>
+      <option value="fast">Fast</option>
+    </select>
+  </div>
 </div>
 
 <div style="position:relative">
@@ -127,6 +145,13 @@ let score = 0;
 
 function updateScore(){
   document.getElementById('score').textContent = score;
+}
+
+function speedFactor(){
+  const v = document.getElementById('speed').value;
+  if(v === 'fast') return 1.5;
+  if(v === 'slow') return 0.5;
+  return 1;
 }
 
 let snake, item, itemTimer, lastSpawn;
@@ -203,7 +228,10 @@ function loop(){
   requestAnimationFrame(loop);
   if(!running) return;
 
-  const tick = 6;
+  // 🔥 40% slower overall + speed selector
+  const effectiveSpeed = speedFactor() * 0.6;
+  const tick = Math.max(2, Math.round(6 / effectiveSpeed));
+
   if(++count < tick) return;
   count=0;
 
